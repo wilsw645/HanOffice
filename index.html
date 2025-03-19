@@ -26,9 +26,19 @@
         }
         
         .header-image {
-            width: 480px;
+            max-width: 100%;
             height: auto;
             margin-bottom: 30px;
+        }
+        @media (min-width: 768px) {
+            .header-image {
+                max-width: 80%;
+            }
+        }
+        @media (min-width: 1200px) {
+            .header-image {
+                max-width: 60%;
+            }
         }
         
         button {
