@@ -51,14 +51,27 @@
         #photo-container {
             margin-top: 100px;
             max-width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #photo {
-            width: 480px;
+            max-width: 100%;
             height: auto;
             display: none;
             margin: 0 auto;
             border: 5px solid white;
             box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        @media (min-width: 768px) {
+            #photo {
+                max-width: 80%;
+            }
+        }
+        @media (min-width: 1200px) {
+            #photo {
+                max-width: 60%;
+            }
         }
     </style>
 </head>
