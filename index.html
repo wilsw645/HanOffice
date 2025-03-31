@@ -161,7 +161,8 @@
         // Function to fetch photos from the API
         async function loadPhotos() {
             try {
-                const response = await fetch('/api/photos');
+                // 直接從靜態 JSON 檔案載入照片資料
+                const response = await fetch('photos.json');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

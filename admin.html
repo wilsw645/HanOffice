@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>照片管理後台</title>
     <link rel="icon" href="Footage/icon.png" type="image/png">
+    <!-- GitHub API 相關設定 -->
+    <script>
+        // 這些設定將在登入後通過表單填寫
+        let GITHUB_TOKEN = '';
+        let GITHUB_REPO_OWNER = '';
+        let GITHUB_REPO_NAME = '';
+        let GITHUB_BRANCH = 'main'; // 默認值，可以在表單中修改
+    </script>
     <style>
         body {
             font-family: sans-serif;
@@ -94,6 +102,36 @@
 </head>
 <body>
     <h1>照片管理</h1>
+    
+    <!-- GitHub 設定表單 -->
+    <div id="github-settings" style="max-width: 600px; margin: 0 auto 30px auto; padding: 20px; background-color: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="margin-top: 0; color: #333; font-size: 1.2em;">GitHub 設定</h2>
+        <p style="color: #666; font-size: 0.9em;">請輸入您的 GitHub 資訊以啟用後台編輯功能。這些資訊只會儲存在您的瀏覽器中，不會上傳到伺服器。</p>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">GitHub 個人訪問令牌:</label>
+            <input type="password" id="github-token" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">GitHub 用戶名:</label>
+            <input type="text" id="github-owner" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">倉庫名稱:</label>
+            <input type="text" id="github-repo" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">分支名稱:</label>
+            <input type="text" id="github-branch" value="main" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </div>
+        
+        <button id="save-github-settings" style="background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 0.9em;">儲存設定</button>
+        <div id="settings-status" style="margin-top: 10px; font-size: 0.9em; min-height: 20px;"></div>
+    </div>
+    
     <div id="loading">載入中...</div>
     <div id="error-loading" style="display: none; color: red;"></div>
     <div id="photo-list"></div>
@@ -105,17 +143,73 @@
             // Redirect to login page if not authenticated
             window.location.href = '/login';
         }
+        
+        // Load GitHub settings from localStorage
+        function loadGitHubSettings() {
+            GITHUB_TOKEN = localStorage.getItem('github_token') || '';
+            GITHUB_REPO_OWNER = localStorage.getItem('github_owner') || '';
+            GITHUB_REPO_NAME = localStorage.getItem('github_repo') || '';
+            GITHUB_BRANCH = localStorage.getItem('github_branch') || 'main';
+            
+            // Fill form fields
+            document.getElementById('github-token').value = GITHUB_TOKEN;
+            document.getElementById('github-owner').value = GITHUB_REPO_OWNER;
+            document.getElementById('github-repo').value = GITHUB_REPO_NAME;
+            document.getElementById('github-branch').value = GITHUB_BRANCH;
+            
+            // Show/hide settings form based on whether settings are complete
+            const settingsComplete = GITHUB_TOKEN && GITHUB_REPO_OWNER && GITHUB_REPO_NAME;
+            document.getElementById('github-settings').style.display = settingsComplete ? 'none' : 'block';
+            
+            return settingsComplete;
+        }
+        
+        // Save GitHub settings to localStorage
+        document.getElementById('save-github-settings').addEventListener('click', function() {
+            const token = document.getElementById('github-token').value.trim();
+            const owner = document.getElementById('github-owner').value.trim();
+            const repo = document.getElementById('github-repo').value.trim();
+            const branch = document.getElementById('github-branch').value.trim() || 'main';
+            
+            if (!token || !owner || !repo) {
+                document.getElementById('settings-status').textContent = '請填寫所有必填欄位';
+                document.getElementById('settings-status').style.color = 'red';
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('github_token', token);
+            localStorage.setItem('github_owner', owner);
+            localStorage.setItem('github_repo', repo);
+            localStorage.setItem('github_branch', branch);
+            
+            // Update global variables
+            GITHUB_TOKEN = token;
+            GITHUB_REPO_OWNER = owner;
+            GITHUB_REPO_NAME = repo;
+            GITHUB_BRANCH = branch;
+            
+            document.getElementById('settings-status').textContent = '設定已儲存';
+            document.getElementById('settings-status').style.color = 'green';
+            
+            // Hide settings form after a delay
+            setTimeout(() => {
+                document.getElementById('github-settings').style.display = 'none';
+                // Reload photos
+                fetchPhotos();
+            }, 1500);
+        });
+        
+        // Check if settings are complete
+        const settingsComplete = loadGitHubSettings();
         const photoListDiv = document.getElementById('photo-list');
         const loadingDiv = document.getElementById('loading');
         const errorLoadingDiv = document.getElementById('error-loading');
 
         async function fetchPhotos() {
             try {
-                const response = await fetch('/api/photos', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
+                // 從靜態 JSON 檔案載入照片資料
+                const response = await fetch('photos.json');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -223,53 +317,94 @@
                 return;
             }
 
-            const updateData = {};
-            if (filenameChanged) {
-                updateData.filename = newFilename;
-            }
-            if (tagsChanged) {
-                // Split tags string into an array, trim whitespace, remove empty tags
-                updateData.tags = newTagsString === '' ? [] : newTagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
-            }
-
+            // 準備新的標籤陣列
+            const newTags = newTagsString === '' ? [] : newTagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
 
             statusDiv.textContent = '儲存中...';
             statusDiv.className = 'status-message';
             saveButton.disabled = true;
 
             try {
-                const response = await fetch(`/api/photos/${photoId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(updateData),
-                });
+                // 1. 獲取當前 photos.json 檔案
+                const photosResponse = await fetch('photos.json');
+                if (!photosResponse.ok) {
+                    throw new Error(`無法獲取照片資料: ${photosResponse.status}`);
+                }
+                const photosData = await photosResponse.json();
 
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || `HTTP error! status: ${response.status}`);
+                // 2. 找到並更新對應的照片資料
+                const photoIndex = photosData.findIndex(photo => photo.id === photoId);
+                if (photoIndex === -1) {
+                    throw new Error(`找不到 ID 為 ${photoId} 的照片`);
                 }
 
-                // Update successful: update original values and UI
-                filenameInput.dataset.original = result.filename; // Use filename from response
-                filenameInput.value = result.filename;
-                tagsInput.dataset.original = result.tags.join(', ');
-                tagsInput.value = result.tags.join(', ');
-                itemDiv.querySelector('img').src = `Photos/${result.filename}`; // Update image src if filename changed
-                itemDiv.querySelector('img').alt = result.filename;
+                // 3. 更新標籤
+                photosData[photoIndex].tags = newTags;
 
+                // 4. 如果檔名也變更了，這裡需要更多處理
+                // 注意：在靜態網站中，實際上無法重命名檔案，所以這裡只更新顯示的檔名
+                if (filenameChanged) {
+                    photosData[photoIndex].filename = newFilename;
+                    // 路徑也需要更新
+                    photosData[photoIndex].path = `Photos/${newFilename}`;
+                }
 
-                statusDiv.textContent = '儲存成功!';
+                // 5. 使用 GitHub API 更新 photos.json 檔案
+                if (!GITHUB_TOKEN || !GITHUB_REPO_OWNER || !GITHUB_REPO_NAME) {
+                    // 顯示設定表單
+                    document.getElementById('github-settings').style.display = 'block';
+                    throw new Error('GitHub 設定不完整，請填寫 GitHub 設定表單');
+                }
+
+                // 5.1 獲取當前檔案的 SHA
+                const fileInfoResponse = await fetch(`https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/photos.json`, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (!fileInfoResponse.ok) {
+                    throw new Error(`無法獲取檔案資訊: ${fileInfoResponse.status}`);
+                }
+                
+                const fileInfo = await fileInfoResponse.json();
+                const fileSha = fileInfo.sha;
+
+                // 5.2 提交更新
+                const updateResponse = await fetch(`https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/photos.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: `更新照片 ${photoId} 的標籤`,
+                        content: btoa(JSON.stringify(photosData, null, 2)), // Base64 編碼
+                        sha: fileSha,
+                        branch: GITHUB_BRANCH
+                    })
+                });
+
+                if (!updateResponse.ok) {
+                    const errorData = await updateResponse.json();
+                    throw new Error(`GitHub API 錯誤: ${errorData.message}`);
+                }
+
+                // 更新成功
+                filenameInput.dataset.original = newFilename;
+                filenameInput.value = newFilename;
+                tagsInput.dataset.original = newTags.join(', ');
+                tagsInput.value = newTags.join(', ');
+
+                statusDiv.textContent = '儲存成功! (Vercel 將在幾分鐘內重新部署)';
                 statusDiv.className = 'status-message status-success';
 
             } catch (error) {
                 console.error('Error saving changes:', error);
                 statusDiv.textContent = `儲存失敗: ${error.message}`;
                 statusDiv.className = 'status-message status-error';
-                // Optionally revert input values on critical failure?
             } finally {
                  saveButton.disabled = false;
                  // Clear status message after a few seconds
@@ -278,18 +413,39 @@
                        statusDiv.textContent = '';
                        statusDiv.className = 'status-message';
                     }
-                 }, 5000);
+                 }, 8000);
             }
         }
 
-        // Add logout function
-        function addLogoutButton() {
+        // Add logout and settings buttons
+        function addButtons() {
             const header = document.querySelector('h1');
+            
+            // Create buttons container
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.style.position = 'absolute';
+            buttonsContainer.style.right = '20px';
+            buttonsContainer.style.top = '20px';
+            
+            // Settings button
+            const settingsButton = document.createElement('button');
+            settingsButton.textContent = 'GitHub 設定';
+            settingsButton.style.padding = '8px 15px';
+            settingsButton.style.backgroundColor = '#007bff';
+            settingsButton.style.color = 'white';
+            settingsButton.style.border = 'none';
+            settingsButton.style.borderRadius = '5px';
+            settingsButton.style.cursor = 'pointer';
+            settingsButton.style.marginRight = '10px';
+            
+            settingsButton.onclick = function() {
+                const settingsForm = document.getElementById('github-settings');
+                settingsForm.style.display = settingsForm.style.display === 'none' ? 'block' : 'none';
+            };
+            
+            // Logout button
             const logoutButton = document.createElement('button');
             logoutButton.textContent = '登出';
-            logoutButton.style.position = 'absolute';
-            logoutButton.style.right = '20px';
-            logoutButton.style.top = '20px';
             logoutButton.style.padding = '8px 15px';
             logoutButton.style.backgroundColor = '#c01128';
             logoutButton.style.color = 'white';
@@ -303,13 +459,23 @@
                 window.location.href = '/login';
             };
             
+            // Add buttons to container
+            buttonsContainer.appendChild(settingsButton);
+            buttonsContainer.appendChild(logoutButton);
+            
             // Insert after header
-            header.parentNode.insertBefore(logoutButton, header.nextSibling);
+            header.parentNode.insertBefore(buttonsContainer, header.nextSibling);
         }
 
         // Initial load
-        fetchPhotos();
-        addLogoutButton();
+        if (settingsComplete) {
+            fetchPhotos();
+        } else {
+            loadingDiv.style.display = 'none';
+            errorLoadingDiv.textContent = '請先填寫 GitHub 設定';
+            errorLoadingDiv.style.display = 'block';
+        }
+        addButtons();
     </script>
 </body>
 </html>
