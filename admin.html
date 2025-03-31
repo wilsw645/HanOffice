@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>照片管理後台</title>
+    <link rel="icon" href="Footage/icon.png" type="image/png">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        #photo-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .photo-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .photo-item img {
+            max-width: 100%;
+            height: 150px; /* Fixed height for consistency */
+            object-fit: cover; /* Scale while maintaining aspect ratio */
+            margin-bottom: 10px;
+            border-radius: 3px;
+        }
+        .photo-item label {
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .photo-item input[type="text"] {
+            width: calc(100% - 12px); /* Adjust for padding */
+            padding: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .photo-item .tags-display span {
+            background-color: #e0e0e0;
+            padding: 3px 6px;
+            border-radius: 3px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+            font-size: 0.8em;
+        }
+        .photo-item button {
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: auto; /* Push button to bottom */
+            font-size: 0.9em;
+        }
+        .photo-item button:hover {
+            background-color: #0056b3;
+        }
+        .status-message {
+            margin-top: 5px;
+            font-size: 0.8em;
+            min-height: 1.2em; /* Reserve space */
+        }
+        .status-success {
+            color: green;
+        }
+        .status-error {
+            color: red;
+        }
+        #loading, #error-loading {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>照片管理</h1>
+    <div id="loading">載入中...</div>
+    <div id="error-loading" style="display: none; color: red;"></div>
+    <div id="photo-list"></div>
+
+    <script>
+        // Check if user is authenticated
+        const authToken = sessionStorage.getItem('authToken');
+        if (!authToken) {
+            // Redirect to login page if not authenticated
+            window.location.href = '/login';
+        }
+        const photoListDiv = document.getElementById('photo-list');
+        const loadingDiv = document.getElementById('loading');
+        const errorLoadingDiv = document.getElementById('error-loading');
+
+        async function fetchPhotos() {
+            try {
+                const response = await fetch('/api/photos', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const photos = await response.json();
+                displayPhotos(photos);
+                loadingDiv.style.display = 'none';
+                errorLoadingDiv.style.display = 'none';
+            } catch (error) {
+                console.error('Error fetching photos:', error);
+                loadingDiv.style.display = 'none';
+                errorLoadingDiv.textContent = `無法載入照片列表: ${error.message}`;
+                errorLoadingDiv.style.display = 'block';
+            }
+        }
+
+        function displayPhotos(photos) {
+            photoListDiv.innerHTML = ''; // Clear existing list
+            if (!photos || photos.length === 0) {
+                 photoListDiv.innerHTML = '<p>資料庫中沒有照片。</p>';
+                 return;
+            }
+
+            photos.forEach(photo => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('photo-item');
+                itemDiv.dataset.id = photo.id;
+
+                const img = document.createElement('img');
+                img.src = photo.path; // Use the path provided by the API
+                img.alt = photo.filename;
+                img.onerror = () => { img.alt = '無法載入圖片'; img.src = ''; }; // Handle broken images
+
+                const filenameLabel = document.createElement('label');
+                filenameLabel.textContent = '檔名:';
+                const filenameInput = document.createElement('input');
+                filenameInput.type = 'text';
+                filenameInput.value = photo.filename;
+                filenameInput.dataset.original = photo.filename; // Store original for comparison
+
+                const tagsLabel = document.createElement('label');
+                tagsLabel.textContent = '標籤 (以逗號分隔):';
+                const tagsInput = document.createElement('input');
+                tagsInput.type = 'text';
+                tagsInput.value = photo.tags.join(', '); // Join tags array into string
+                tagsInput.dataset.original = photo.tags.join(', ');
+
+                // --- Event Listeners for Tags Input ---
+                tagsInput.addEventListener('keydown', (event) => {
+                    // Enter key to save
+                    if (event.key === 'Enter' || event.keyCode === 13) {
+                        event.preventDefault(); // Prevent default Enter behavior (like form submission)
+                        saveChanges(photo.id); // Trigger save for this item
+                    }
+                });
+                // --- End Event Listeners ---
+
+                const saveButton = document.createElement('button');
+                saveButton.textContent = '儲存變更';
+                saveButton.onclick = () => saveChanges(photo.id);
+
+                const statusDiv = document.createElement('div');
+                statusDiv.classList.add('status-message');
+
+                itemDiv.appendChild(img);
+                itemDiv.appendChild(filenameLabel);
+                itemDiv.appendChild(filenameInput);
+                itemDiv.appendChild(tagsLabel);
+                itemDiv.appendChild(tagsInput);
+                itemDiv.appendChild(saveButton);
+                itemDiv.appendChild(statusDiv); // Add status message div
+
+                photoListDiv.appendChild(itemDiv);
+            });
+        }
+
+        async function saveChanges(photoId) {
+            const itemDiv = photoListDiv.querySelector(`.photo-item[data-id='${photoId}']`);
+            if (!itemDiv) return;
+
+            const filenameInput = itemDiv.querySelector('input[type="text"]:nth-of-type(1)');
+            const tagsInput = itemDiv.querySelector('input[type="text"]:nth-of-type(2)');
+            const statusDiv = itemDiv.querySelector('.status-message');
+            const saveButton = itemDiv.querySelector('button');
+
+            const newFilename = filenameInput.value.trim();
+            const newTagsString = tagsInput.value.trim();
+            const originalFilename = filenameInput.dataset.original;
+            const originalTagsString = tagsInput.dataset.original;
+
+            // Basic validation
+            if (!newFilename) {
+                statusDiv.textContent = '檔名不能為空';
+                statusDiv.className = 'status-message status-error';
+                return;
+            }
+
+            // Only send update if filename or tags actually changed
+            const filenameChanged = newFilename !== originalFilename;
+            const tagsChanged = newTagsString !== originalTagsString;
+
+            if (!filenameChanged && !tagsChanged) {
+                statusDiv.textContent = '沒有變更';
+                statusDiv.className = 'status-message';
+                 setTimeout(() => { statusDiv.textContent = ''; }, 3000);
+                return;
+            }
+
+            const updateData = {};
+            if (filenameChanged) {
+                updateData.filename = newFilename;
+            }
+            if (tagsChanged) {
+                // Split tags string into an array, trim whitespace, remove empty tags
+                updateData.tags = newTagsString === '' ? [] : newTagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
+            }
+
+
+            statusDiv.textContent = '儲存中...';
+            statusDiv.className = 'status-message';
+            saveButton.disabled = true;
+
+            try {
+                const response = await fetch(`/api/photos/${photoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(updateData),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP error! status: ${response.status}`);
+                }
+
+                // Update successful: update original values and UI
+                filenameInput.dataset.original = result.filename; // Use filename from response
+                filenameInput.value = result.filename;
+                tagsInput.dataset.original = result.tags.join(', ');
+                tagsInput.value = result.tags.join(', ');
+                itemDiv.querySelector('img').src = `Photos/${result.filename}`; // Update image src if filename changed
+                itemDiv.querySelector('img').alt = result.filename;
+
+
+                statusDiv.textContent = '儲存成功!';
+                statusDiv.className = 'status-message status-success';
+
+            } catch (error) {
+                console.error('Error saving changes:', error);
+                statusDiv.textContent = `儲存失敗: ${error.message}`;
+                statusDiv.className = 'status-message status-error';
+                // Optionally revert input values on critical failure?
+            } finally {
+                 saveButton.disabled = false;
+                 // Clear status message after a few seconds
+                 setTimeout(() => {
+                    if (statusDiv.textContent !== '儲存中...') { // Avoid clearing if another save started
+                       statusDiv.textContent = '';
+                       statusDiv.className = 'status-message';
+                    }
+                 }, 5000);
+            }
+        }
+
+        // Add logout function
+        function addLogoutButton() {
+            const header = document.querySelector('h1');
+            const logoutButton = document.createElement('button');
+            logoutButton.textContent = '登出';
+            logoutButton.style.position = 'absolute';
+            logoutButton.style.right = '20px';
+            logoutButton.style.top = '20px';
+            logoutButton.style.padding = '8px 15px';
+            logoutButton.style.backgroundColor = '#c01128';
+            logoutButton.style.color = 'white';
+            logoutButton.style.border = 'none';
+            logoutButton.style.borderRadius = '5px';
+            logoutButton.style.cursor = 'pointer';
+            
+            logoutButton.onclick = function() {
+                // Clear auth token and redirect to login
+                sessionStorage.removeItem('authToken');
+                window.location.href = '/login';
+            };
+            
+            // Insert after header
+            header.parentNode.insertBefore(logoutButton, header.nextSibling);
+        }
+
+        // Initial load
+        fetchPhotos();
+        addLogoutButton();
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>院長攝影展</title> 
+    <link rel="icon" href="Footage/icon.png" type="image/png">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0; /* Remove default margin */
+            padding: 20px; /* Add padding back */
+            background-color: #f4f4f4; /* Fallback color */
+            background-image: url('Footage/Background.png'); /* Add background */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+        }
+        h1 {
+            text-align: center;
+            color: #eee; /* Lighter color for dark background */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7); /* Add shadow for readability */
+        }
+        #search-container {
+            text-align: center;
+            text-align: center;
+            color: #333;
+        }
+        #search-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #search-input {
+            padding: 10px;
+            width: 60%;
+            max-width: 400px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #photo-gallery {
+            column-count: 4; /* Waterfall layout */
+            column-gap: 10px; /* Horizontal gap between columns */
+            margin-top: 20px;
+        }
+        /* Responsive columns for waterfall */
+         @media (max-width: 1200px) { #photo-gallery { column-count: 3; } }
+         @media (max-width: 800px) { #photo-gallery { column-count: 2; } }
+         @media (max-width: 500px) { #photo-gallery { column-count: 1; } } 
+
+        .gallery-item {
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 10px; /* Bottom margin same as column-gap */
+            break-inside: avoid-column; 
+            display: inline-block; 
+            width: 100%; 
+            position: relative;
+            overflow: hidden;
+        }
+         .gallery-item:hover .tags { /* Show tags on hover */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .gallery-item img {
+            max-width: 100%;
+            /* height: 150px; */ /* Remove fixed height for waterfall */
+            height: auto; /* Let height adjust */
+            object-fit: cover;
+            /* margin-bottom: 10px; */ /* Remove bottom margin */
+            border-radius: 5px; /* Keep image radius */
+            cursor: pointer; /* Indicate clickable */
+            display: block; /* Ensure image is block level */
+            border-radius: 5px; /* Keep image radius */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Add dropshadow to image */
+            transition: box-shadow 0.3s ease; /* Smooth transition for shadow */
+        }
+         .gallery-item img:hover {
+             box-shadow: 0 8px 16px rgba(0,0,0,0.3); /* Enhance shadow on hover */
+         }
+        /* .gallery-item .filename removed */
+        .gallery-item .tags {
+            position: absolute; /* Position tags over the image */
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            /* background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0)); */ /* Removed gradient */
+            background-color: rgba(0, 0, 0, 0.7); /* Black background with transparency */
+            padding: 5px; /* Adjusted padding */
+            box-sizing: border-box; /* Include padding in width */
+            font-size: 0.7em; /* Slightly smaller tags */
+            /* margin-top: 5px; */ /* Removed */
+            color: #fff; /* White tags */
+            /* text-shadow: 1px 1px 1px rgba(0,0,0,0.8); */ /* Removed text shadow */
+            text-shadow: none; /* Ensure no text shadow */
+            opacity: 0; /* Hidden by default */
+            transform: translateY(100%); /* Start below the item */
+            transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth transition */
+            text-align: left; /* Align tags left */
+            border-bottom-left-radius: 5px; /* Match image radius */
+            border-bottom-right-radius: 5px;
+        }
+        .gallery-item .tags span {
+            /* background-color: rgba(255, 255, 255, 0.7); */ /* Removed background for individual tags */
+            /* color: #333; */ /* Color now inherited (white) */
+            padding: 1px 3px; /* Adjust padding */
+            /* border-radius: 3px; */ /* Removed individual radius */
+            margin: 2px 3px 2px 0; /* Adjust margin */
+            display: inline-block;
+        }
+        #loading, #error-loading {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 30px;
+        }
+        /* Styles for lightbox (optional simple version) */
+        #lightbox {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        #lightbox img {
+            max-width: 90%;
+            max-height: 80%;
+            display: block;
+            margin: auto;
+        }
+        #lightbox-caption {
+            text-align: center;
+            color: #ccc;
+            padding: 10px 0;
+            font-size: 1.1em;
+        }
+        #lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        #lightbox-close:hover,
+        #lightbox-close:focus {
+            color: #bbb;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="Footage/gallaryHeader.png" alt="院長攝影展" style="max-width: 50%; height: auto;">
+    </div>
+
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="你要找什麼樣的院長"> 
+    </div>
+
+    <div id="loading">載入中...</div>
+    <div id="error-loading" style="display: none; color: red;"></div>
+    <div id="photo-gallery"></div>
+
+    <!-- Simple Lightbox Structure -->
+    <div id="lightbox">
+        <span id="lightbox-close">&times;</span>
+        <img id="lightbox-image" src="" alt="放大圖片">
+        <div id="lightbox-caption"></div>
+    </div>
+
+    <script>
+        const galleryDiv = document.getElementById('photo-gallery');
+        const searchInput = document.getElementById('search-input');
+        const loadingDiv = document.getElementById('loading');
+        const errorLoadingDiv = document.getElementById('error-loading');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const lightboxCaption = document.getElementById('lightbox-caption');
+        const lightboxClose = document.getElementById('lightbox-close');
+
+        let allPhotosData = []; // To store all fetched photo data
+
+        // --- Lightbox Functions ---
+        function openLightbox(imageSrc, caption) {
+            lightboxImage.src = imageSrc;
+            lightboxCaption.textContent = caption;
+            lightbox.style.display = 'flex'; // Use flex to center
+        }
+
+        function closeLightbox() {
+            lightbox.style.display = 'none';
+            lightboxImage.src = ''; // Clear image
+            lightboxCaption.textContent = '';
+        }
+
+        lightboxClose.onclick = closeLightbox;
+        lightbox.onclick = function(event) {
+            // Close if clicking on the background, not the image itself
+            if (event.target === lightbox) {
+                closeLightbox();
+            }
+        }
+        // --- End Lightbox Functions ---
+
+
+        async function fetchAndDisplayPhotos() {
+            try {
+                loadingDiv.style.display = 'block';
+                galleryDiv.innerHTML = '';
+                errorLoadingDiv.style.display = 'none';
+
+                const response = await fetch('/api/photos');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                allPhotosData = await response.json(); // Store fetched data
+
+                filterAndDisplayPhotos(); // Initial display
+
+                loadingDiv.style.display = 'none';
+            } catch (error) {
+                console.error('Error fetching photos:', error);
+                loadingDiv.style.display = 'none';
+                errorLoadingDiv.textContent = `無法載入照片列表: ${error.message}`;
+                errorLoadingDiv.style.display = 'block';
+            }
+        }
+
+        function filterAndDisplayPhotos() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            galleryDiv.innerHTML = ''; // Clear current display
+
+            const filteredPhotos = allPhotosData.filter(photo => {
+                if (!searchTerm) {
+                    return true; // Show all if search is empty
+                }
+                // Check if any tag includes the search term (case-insensitive)
+                return photo.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+            });
+
+            if (filteredPhotos.length === 0) {
+                galleryDiv.innerHTML = '<p>找不到符合條件的照片。</p>';
+                return;
+            }
+
+            filteredPhotos.forEach(photo => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('gallery-item');
+
+                const img = document.createElement('img');
+                img.src = photo.path;
+                img.alt = photo.filename;
+                img.loading = 'lazy'; // Lazy load images
+                img.onerror = () => { img.alt = '無法載入圖片'; img.src = ''; };
+                img.onclick = () => openLightbox(photo.path, photo.tags.join(', ') || photo.filename); // Use tags or filename as caption
+
+                /* filenameDiv removed */
+
+                const tagsDiv = document.createElement('div');
+                tagsDiv.classList.add('tags');
+                // Only add tags div if there are tags
+                if (photo.tags && photo.tags.length > 0) {
+                    photo.tags.forEach(tag => {
+                        const tagSpan = document.createElement('span');
+                        tagSpan.textContent = `#${tag}`; // Add '#' prefix
+                        tagsDiv.appendChild(tagSpan);
+                    });
+                    
+                    // Only append tags div if there are tags
+                    itemDiv.appendChild(tagsDiv);
+                }
+                // No else clause - don't add tags div if no tags
+
+                itemDiv.appendChild(img);
+                // Tags div is already appended conditionally above
+                galleryDiv.appendChild(itemDiv);
+            });
+        }
+
+        // Event listener for the search input
+        searchInput.addEventListener('input', filterAndDisplayPhotos);
+
+        // Initial load
+        fetchAndDisplayPhotos();
+    </script>
+</body>
+</html>

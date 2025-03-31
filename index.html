@@ -55,12 +55,41 @@
             cursor: pointer;
             border-radius: 10px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease; /* Add transition */
+            box-sizing: border-box; /* Ensure padding is included in width/height */
+            width: 250px; /* Set a fixed width for consistency */
+            max-width: 80%; /* Allow shrinking on small screens */
         }
         button:hover {
             background-color: #c01128;
         }
+        .content-flow { /* Renamed from button-group for clarity */
+            margin-top: -40px; /* Adjust overlap with header */
+            /* margin-bottom: 40px; */ /* Removed, spacing handled by elements */
+            /* display: flex; */ /* Removed flex */
+            /* justify-content: center; */ /* Removed flex */
+            /* gap: 20px; */ /* Removed flex */
+            /* align-items: center; */ /* Removed flex */
+            /* flex-wrap: wrap; */ /* Removed flex */
+            display: flex; /* Use flex for centering items vertically */
+            flex-direction: column; /* Stack items vertically */
+            align-items: center; /* Center items horizontally */
+        }
+        .content-flow button,
+        .content-flow a > button { /* Target both buttons */
+             margin: 0; /* Reset default button margin */
+             font-size: 18px; /* Slightly smaller font for consistency */
+             padding: 12px 20px; /* Adjust padding for consistency */
+             width: 250px; /* Match fixed width */
+             max-width: 80%;
+        }
+        #random-button {
+             margin-bottom: 20px; /* Space below the first button */
+        }
         #photo-container {
-            margin-top: 100px;
+            /* margin-top: 100px; Removed */
+            margin-top: 20px; /* Space above photo */
+            margin-bottom: 20px; /* Space below photo */
             max-width: 100%;
             display: flex;
             justify-content: center;
@@ -97,11 +126,23 @@
 <body>
     <div class="header-container">
         <img src="Footage/Header.png" alt="歡迎來到立法院長室" class="header-image">
-        <button id="random-button">我要找院長</button>
+        <div class="content-flow"> 
+            
+            <button id="random-button">我要找院長</button>
+
+            
+            <div id="photo-container">
+                <img id="photo" alt="隨機照片">
+            </div>
+
+            
+            <a href="gallery.html" style="text-decoration: none;">
+                 <button>院長攝影展</button> 
+            </a>
+        </div>
     </div>
-    <div id="photo-container">
-        <img id="photo" alt="隨機照片">
-    </div>
+
+    
     
     <footer class="footer">
         © 2025 吉吉富吉吉
@@ -111,240 +152,75 @@
       </script>
       <script defer src="/_vercel/insights/script.js"></script>
     <script>
-        // 照片列表
-        const photos = [
-            "Photos/0e8c371c6c5be044e8060ca34318dce6.jpg",
-            "Photos/1_aRKwpop9xkAGxYIHSgo90g.png",
-            "Photos/1dc6c30d0175a36a340c93faf9d70353.jpg",
-            "Photos/2e511c3c84ad7032d05959c8165188aa.jpg",
-            "Photos/3bab3189882423ac2eca202138f9b66f.jpg",
-            "Photos/5bf2d53ce5ab6.jpg",
-            "Photos/5cae746446c61.jpg",
-            "Photos/5de90bd3b5ec9.jpg",
-            "Photos/5e19204e85abb.jpg",
-            "Photos/6bafe049e05ebc20006491c7d248dd93.jpeg",
-            "Photos/6dc8f950-981a-11e9-bf1e-9477646ee70a.png",
-            "Photos/8aaf115a6e903d19d1568192a033b8e4.jpg",
-            "Photos/9b781d91a58ea5d89e70f36a3dcb46f8.jpg",
-            "Photos/22e0214998aaba66279eb6aa07e5cad4.jpg",
-            "Photos/24f0a57ba6a9e213505e4350e730f4a4.jpg",
-            "Photos/34bcf05ce952b8dc548052bca8617a06.jpg",
-            "Photos/40cbf97e1886a3db4ffda57d90990bdb.jpg",
-            "Photos/57ee026fb34e0cc4181c10987ce5d816.jpg",
-            "Photos/62c7e374829b04a082ff43b8584328fd.jpg",
-            "Photos/73a82e87cf770afb85a30d18e0456775.jpg",
-            "Photos/94cd42dae1a60151ea71167e259cb7bd.jpg",
-            "Photos/0248c8db64477e91a546cab5714c0052.jpg",
-            "Photos/283.jpg",
-            "Photos/345a5f44bc219f22248edb16067beeee-683x388.png",
-            "Photos/395f9f4e-f8ff-4a1b-b31e-b8f928bc76be.jpg",
-            "Photos/463f4c45e82971dd2f2c6f8a1309720d.jpg",
-            "Photos/582d15c778f4a0fa9d2d9b5a7e6a9783.jpg",
-            "Photos/1015x768_wmky_0_C20240217000009.jpg",
-            "Photos/1103x768_296448787817.jpg",
-            "Photos/1200px-高雄市長韓國瑜前往鹽埕國中視察防疫整備_05.jpg",
-            "Photos/1200x800_wmky_588063611954_202402020063000000.jpg",
-            "Photos/2016South3295_2.jpg",
-            "Photos/2018-11-01-5bda99cef3ea0.jpg",
-            "Photos/2019-11-11_103711.jpeg",
-            "Photos/3987ea37c7f92f6fe63994bddc14a93b.jpg",
-            "Photos/4415a6ee1165f906f449aac7221fb177.jpg",
-            "Photos/4831e13cc98065f81d4da310456a9200.jpg",
-            "Photos/4834c338433ba99be79ae20a4ced9048.jpg",
-            "Photos/35081ac1-a6bf-4bfc-ad48-3822fb69e6cc.jpg",
-            "Photos/60227_01.jpg",
-            "Photos/84901c6e734794db4c847117da080cda.jpg",
-            "Photos/691226-PH.jpg",
-            "Photos/1651253-XXL.jpg",
-            "Photos/1651254-XXL.jpg",
-            "Photos/1654991-PH.jpg",
-            "Photos/1951977-XXL.jpg",
-            "Photos/1976272-XXL.jpg",
-            "Photos/2189549.jpg",
-            "Photos/2296698-PH.jpg",
-            "Photos/2360920-PH.jpg",
-            "Photos/2705360_1.jpg",
-            "Photos/2779650_1.jpg",
-            "Photos/2910143_1_1.jpg",
-            "Photos/3717140.jpg",
-            "Photos/3968205d-41f9-4370-9743-bcacf5f7ddc8.jpg",
-            "Photos/18581836_1973466812890473_157596257760824430_n.jpg",
-            "Photos/20190720-023832_U13925_M537334_f9b3.jpg",
-            "Photos/20190720-023832_U13925_M537337_f2d3.jpg",
-            "Photos/20190720-023832_U13925_M537349_7a3d.jpg",
-            "Photos/20190909中天新聞　韓國瑜苦練「浪子回頭」　韓粉燈海超壯觀-0001.png",
-            "Photos/20190909中天新聞　韓國瑜苦練「浪子回頭」　韓粉燈海超壯觀-0002.png",
-            "Photos/20190909中天新聞　韓國瑜苦練「浪子回頭」　韓粉燈海超壯觀-0003.png",
-            "Photos/20191108-055032_U13721_M566185_fed5.jpg",
-            "Photos/20200515-102211_U589_M612048_5d30.jpg",
-            "Photos/20221004-105354_U20336_M798139_129f.jpg",
-            "Photos/20240201-021048_U18448_M930246_1113.jpg",
-            "Photos/44370849_2296087460628405_8209467405164871680_n.jpg",
-            "Photos/52452445_2376723822564768_6202932132709400576_n.jpg",
-            "Photos/60394203_2438676369702846_6174203272560115712_n.jpg",
-            "Photos/61136382_2446204512283365_7601287159739318272_n.jpg",
-            "Photos/61614212_2451101521793664_5491754710350168064_n.jpg",
-            "Photos/62611136_2459747227595760_1220756003331506176_n.jpg",
-            "Photos/65126060_2473404619563354_5353496401672142848_n.jpg",
-            "Photos/67902576_2503179889919160_5407040375971905536_n.jpg",
-            "Photos/71865881_2555728227997659_2857703816638234624_n.jpg",
-            "Photos/73265927_2577892979114517_342648810087907328_n.jpg",
-            "Photos/74230450_2578181829085632_3656693949898162176_n.jpg",
-            "Photos/75446490_3034965363187502_4641471912977891328_o.jpg",
-            "Photos/93040789d7829896ef76c8a07b4e542b_1280.webp",
-            "Photos/243045223_3197115220525620_3847061771606859865_n.jpg",
-            "Photos/273831817_3308139229423218_7502502106790967788_n.jpg",
-            "Photos/316210430_5853856954708470_5526644967868213048_n-0001.png",
-            "Photos/316221957_675088757306493_7335401192852110005_n.jpg",
-            "Photos/316543755_679298153552220_5912201575040759204_n.jpg",
-            "Photos/316667528_679411660207536_8102889624507895715_n.jpg",
-            "Photos/316671496_679411826874186_1193253798739581983_n-1.jpg",
-            "Photos/420027648_922000625816370_7700195968360996317_n.jpg",
-            "Photos/422073287_345359631710243_8569182202931226614_n.jpg",
-            "Photos/431833502_713943617569420_4019419582683351987_n.jpg",
-            "Photos/431933802_443760894644907_2614510588489207020_n.jpg",
-            "Photos/431937051_393647456625246_6147246102589195718_n.jpg",
-            "Photos/431949384_1325053502220083_4215609742656086275_n.jpg",
-            "Photos/431985312_1060748035013783_5604823360379121577_n.jpg",
-            "Photos/431988817_1144572313628430_2112879043837113604_n.jpg",
-            "Photos/432017240_421952746862294_567807447304688988_n.jpg",
-            "Photos/434016867_1457451241521364_4077283432753383830_n.jpeg",
-            "Photos/441222715_456569710249221_5649649984120215317_n.jpg",
-            "Photos/1542710507_21721.jpg",
-            "Photos/1554288349-7f1e2938e45f85736d134f7d4bc50faa-1065x622.png",
-            "Photos/1563947725-41a3d3d3585c725491febe6566d7d75f-696x391.jpg",
-            "Photos/1563947874-984c29fa3e3264df50b2aa67b7596341-696x392.jpg",
-            "Photos/1565949781_100073_cropped_45_1565949766_100073_main_20190501韓國瑜演講摸頭_攝影鄭國強.png",
-            "Photos/1566527081.jpg",
-            "Photos/1579173915_49987.jpg",
-            "Photos/1634172436632.jpg",
-            "Photos/1639212167919-3331d8e225544651872c7b43595ef705-1152x870.png",
-            "Photos/1706498263970.jpg",
-            "Photos/1709024241321-10a9b003fe3e40178e4d130048896f55-800x535.jpg",
-            "Photos/15737440603709.jpg",
-            "Photos/20180822184939-6109e2f4.jpg",
-            "Photos/20181020194000_86.jpeg",
-            "Photos/20181106001077.jpg",
-            "Photos/20181129001966.jpg",
-            "Photos/20181204004610.jpg",
-            "Photos/20190228002286.jpg",
-            "Photos/20190415002932.jpg",
-            "Photos/20190510004106.jpg",
-            "Photos/20190521001084.jpg",
-            "Photos/20190712151654-1f33b243.jpg",
-            "Photos/20190715001924.jpg",
-            "Photos/20190807182310TFr7.png",
-            "Photos/20191104142046-bb090fe631704fd79fdcf3d5a1d6050f.jpg",
-            "Photos/20191107095825-4731681d.jpg",
-            "Photos/20191125180156-ea9168b0121108f9b2054173ec95f1e1-w800.jpg",
-            "Photos/20200314001334.jpg",
-            "Photos/20200402004232.jpg",
-            "Photos/20200415002922.jpg",
-            "Photos/20200416110757-a7333488-me.png",
-            "Photos/20200605000218M.jpg",
-            "Photos/20200615113113-43eb69ce14a68dbd2ecb8d83930e27f7-mobile.jpg",
-            "Photos/20230709002889.jpg",
-            "Photos/20230726001876.jpg",
-            "Photos/20231122005834.jpg",
-            "Photos/20240114070631-0dd4f5d2.jpg",
-            "Photos/20240303003207.jpg",
-            "Photos/20240510001687.jpg",
-            "Photos/20240520001534.jpg",
-            "Photos/171092611921400_P7693784.jpg",
-            "Photos/171136092975769_P15069857.jpeg",
-            "Photos/171136092975769_P15069857.webp",
-            "Photos/171732345142038_P26736699.jpg",
-            "Photos/171827001152581_P28875715.jpeg",
-            "Photos/201811201943501_l.jpg",
-            "Photos/B22A00_P_04_02.jpg",
-            "Photos/Double Lucky Cola.jpg",
-            "Photos/Facebook photo (1).jpg",
-            "Photos/HBD.png",
-            "Photos/IMG_1370.JPG",
-            "Photos/IMG_1634.JPG",
-            "Photos/IMG_1648.JPG",
-            "Photos/IMG_1759.JPG",
-            "Photos/IMG_1760.JPG",
-            "Photos/IMG_1761.JPG",
-            "Photos/IMG_1806.jpeg",
-            "Photos/IMG_1807.JPG",
-            "Photos/IMG_1808.JPG",
-            "Photos/IMG_1809.jpeg",
-            "Photos/IMG_1823.JPG",
-            "Photos/IMG_1824.JPG",
-            "Photos/IMG_1825.JPG",
-            "Photos/IMG_1826.JPG",
-            "Photos/IMG_1827.JPG",
-            "Photos/IMG_1828.JPG",
-            "Photos/IMG_1829.JPG",
-            "Photos/IMG_1830.JPG",
-            "Photos/IMG_1831.JPG",
-            "Photos/IMG_1832.JPG",
-            "Photos/IMG_1896.png",
-            "Photos/IMG_1897.JPG",
-            "Photos/IMG_1919.JPG",
-            "Photos/IMG_1935.JPG",
-            "Photos/IMG_1936.JPG",
-            "Photos/IMG_1937.JPG",
-            "Photos/IMG_1938.JPG",
-            "Photos/IMG_1942.JPG",
-            "Photos/IMG_2017.JPG",
-            "Photos/IMG_2025.JPG",
-            "Photos/IMG_2026.JPG",
-            "Photos/IMG_2032.JPG",
-            "Photos/IMG_2033.JPG",
-            "Photos/IMG_2034.JPG",
-            "Photos/IMG_2059.jpeg",
-            "Photos/IMG_2074.JPG",
-            "Photos/IMG_2075.JPG",
-            "Photos/IMG_2076.JPG",
-            "Photos/IMG_2077.JPG",
-            "Photos/IMG_2150.JPG",
-            "Photos/IMG_2203.JPG",
-            "Photos/IMG_2241.JPG",
-            "Photos/IMG_2247.JPG",
-            "Photos/IMG_2270.JPG",
-            "Photos/IMG_2361.JPG",
-            "Photos/IMG_2368.JPG",
-            "Photos/IMG_2369.WEBP",
-            "Photos/IMG_2370.JPG"
-        ];
-
-        // 獲取DOM元素
+        // Get DOM elements
         const randomButton = document.getElementById('random-button');
         const photoElement = document.getElementById('photo');
-        
-        // 是否是第一次點擊
+        let photos = []; // Array to hold photo paths from the API
         let isFirstClick = true;
-        
-        // 添加按鈕點擊事件
+
+        // Function to fetch photos from the API
+        async function loadPhotos() {
+            try {
+                const response = await fetch('/api/photos');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const photoData = await response.json();
+                // Extract just the paths for the random selection logic
+                photos = photoData.map(p => p.path);
+                console.log(`Loaded ${photos.length} photos.`);
+                // Enable button once photos are loaded
+                randomButton.disabled = false;
+                randomButton.textContent = "我要找院長"; // Reset button text
+            } catch (error) {
+                console.error('Failed to load photos:', error);
+                photoElement.alt = '無法載入照片列表';
+                photoElement.style.display = 'block'; // Show error message
+                randomButton.textContent = "載入失敗";
+                randomButton.disabled = true;
+            }
+        }
+
+        // Add button click event listener
         randomButton.addEventListener('click', () => {
-            // 隨機選擇一張照片
+            if (photos.length === 0) {
+                console.warn("No photos loaded yet or photo list is empty.");
+                photoElement.alt = '沒有可顯示的照片';
+                photoElement.style.display = 'block';
+                return; // Don't proceed if no photos
+            }
+
+            // Randomly select a photo path
             const randomIndex = Math.floor(Math.random() * photos.length);
-            const randomPhoto = photos[randomIndex];
-            
-            // 設置圖片來源並顯示
-            photoElement.src = randomPhoto;
+            const randomPhotoPath = photos[randomIndex];
+
+            // Set image source and display
+            photoElement.src = randomPhotoPath;
+            photoElement.alt = randomPhotoPath.split('/').pop(); // Use filename as alt text
             photoElement.style.display = 'block';
-            
-            // 如果是第一次點擊，更改按鈕文字
+
+            // Change button text on first click
             if (isFirstClick) {
                 randomButton.textContent = "下面一位";
                 isFirstClick = false;
             }
-            
-            // 預加載圖片
+
+            // Image loading handlers (optional but good practice)
             photoElement.onload = () => {
-                // 圖片加載完成後的處理
-                console.log('圖片加載完成');
+                console.log('Image loaded successfully:', randomPhotoPath);
             };
-            
             photoElement.onerror = () => {
-                // 圖片加載失敗的處理
-                console.error('圖片加載失敗:', randomPhoto);
-                photoElement.alt = '圖片加載失敗';
+                console.error('Failed to load image:', randomPhotoPath);
+                photoElement.alt = '圖片載入失敗';
+                // Maybe try loading another random one? Or remove from list?
             };
         });
+
+        // Initial setup
+        randomButton.disabled = true; // Disable button until photos are loaded
+        randomButton.textContent = "載入中...";
+        loadPhotos(); // Load photos when the script runs
+
     </script>
 </body>
 </html>
